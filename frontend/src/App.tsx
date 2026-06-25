@@ -76,8 +76,8 @@ function App() {
       // Connect to SSE stream
       const evtSource = new EventSource(`/api/stream/${job_id}`)
 
-      evtSource.addEventListener('status', (e) => {
-        const data = JSON.parse(e.data)
+      evtSource.addEventListener('status', (e: Event) => {
+        const data = JSON.parse((e as MessageEvent).data)
         setMessage(data.message || '')
         if (data.step === 'parsed') { setProgress(10) }
         if (data.step === 'enriching') { setStep('enriching'); setCurrentStepIdx(1); setProgress(15) }
@@ -87,8 +87,8 @@ function App() {
         if (data.step === 'assembling') { setStep('assembling'); setCurrentStepIdx(4); setProgress(80) }
       })
 
-      evtSource.addEventListener('progress', (e) => {
-        const data = JSON.parse(e.data)
+      evtSource.addEventListener('progress', (e: Event) => {
+        const data = JSON.parse((e as MessageEvent).data)
         if (data.item === 'slide') {
           const fraction = parseInt(data.name.replace('slide_', '')) / data.count
           setProgress(25 + fraction * 30)
@@ -109,8 +109,8 @@ function App() {
         evtSource.close()
       })
 
-      evtSource.addEventListener('error', (e) => {
-        const data = JSON.parse(e.data)
+      evtSource.addEventListener('error', (e: Event) => {
+        const data = JSON.parse((e as MessageEvent).data)
         setStep('error')
         setErrorMsg(data.message || 'An error occurred')
         evtSource.close()
