@@ -37,7 +37,7 @@ For the first slide (title slide), create a welcome slide:
 {
   "title": "வரவேற்பு",
   "subtitle": "முழுமையான தமிழ் கையேடு",
-  "bullets": ["JT Group of Institution வழங்கும் தமிழ் நிரலாக்க கல்வி"],
+  "bullets": ["SK AI Video Generator வழங்கும் தமிழ் நிரலாக்க கல்வி"],
   "code": "",
   "narration": "வணக்கம், இந்த பாடத்தில்..."
 }
@@ -82,7 +82,7 @@ def _fallback_slides(parsed: ParsedContent) -> list[dict]:
     slides = [{
         "title": "வரவேற்பு",
         "subtitle": parsed.title,
-        "bullets": ["JT Group of Institution வழங்கும் தமிழ் நிரலாக்க கல்வி"],
+        "bullets": ["SK AI Video Generator வழங்கும் தமிழ் நிரலாக்க கல்வி"],
         "code": "",
         "narration": f"வணக்கம், {parsed.title} பற்றிய இந்த பாடத்திற்கு அனைவருக்கும் வரவேற்பு."
     }]
@@ -105,7 +105,7 @@ def _fallback_slides(parsed: ParsedContent) -> list[dict]:
         "title": "சுருக்கம்",
         "subtitle": "முக்கிய கருத்துக்கள்",
         "bullets": [f"{parsed.title} பற்றி இப்பாடத்தில் கற்றுக் கொண்டோம்.",
-                     "மேலும் தமிழில் நிரலாக்க கல்விக்கு JT Group of Institution-ஐ பின்தொடருங்கள்."],
+                     "மேலும் தமிழில் நிரலாக்க கல்விக்கு SK AI Video Generator-ஐ பின்தொடருங்கள்."],
         "code": "",
         "narration": f"இப்பாடத்தில் {parsed.title} பற்றி கற்றுக் கொண்டோம். கற்றலுக்கு நன்றி. வணக்கம்."
     })
@@ -116,7 +116,7 @@ def generate_title_slide_overall(title: str) -> dict:
     return {
         "title": "வரவேற்பு",
         "subtitle": title,
-        "bullets": ["JT Group of Institution வழங்கும் தமிழ் நிரலாக்க கல்வி"],
+        "bullets": ["SK AI Video Generator வழங்கும் தமிழ் நிரலாக்க கல்வி"],
         "code": "",
-        "narration": f"JT Group of Institution சார்பாக {title} பற்றிய இந்த பாடத்திற்கு அனைவருக்கும் வரவேற்பு."
+        "narration": f"SK AI Video Generator சார்பாக {title} பற்றிய இந்த பாடத்திற்கு அனைவருக்கும் வரவேற்பு."
     }

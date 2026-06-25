@@ -22,13 +22,14 @@ async def render_slides(slides: list[dict], topic: str, output_dir: str, on_prog
         page = await context.new_page()
 
         for i, slide in enumerate(slides):
+            total = len(slides)
             html = template.render(
                 topic=topic,
                 title=slide.get("title", ""),
                 subtitle=slide.get("subtitle", ""),
                 bullets=slide.get("bullets", []),
                 code=slide.get("code", ""),
-                time="10:30 AM"
+                slide_num=f"{i+1:02d} / {total:02d}"
             )
             await page.set_content(html, wait_until="networkidle")
             await page.wait_for_timeout(500)
