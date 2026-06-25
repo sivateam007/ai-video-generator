@@ -1,5 +1,5 @@
 """FastAPI backend for HTML-to-Video application."""
-import os, json, uuid, asyncio, shutil
+import os, sys, json, uuid, asyncio, shutil
 from pathlib import Path
 from contextlib import asynccontextmanager
 
@@ -9,13 +9,15 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from sse_starlette.sse import EventSourceResponse
 
+BASE_DIR = Path(__file__).parent
+sys.path.insert(0, str(BASE_DIR))
+
 from content_parser import parse_html
 from ai_enricher import enrich_content
 from slide_renderer import render_slides
 from audio_gen import generate_audio
 from video_asm import assemble_video
 
-BASE_DIR = Path(__file__).parent
 UPLOAD_DIR = BASE_DIR / "uploads"
 OUTPUT_DIR = BASE_DIR / "output"
 FRONTEND_DIR = BASE_DIR.parent / "frontend" / "dist"
