@@ -14,7 +14,7 @@ async def render_slides(slides: list[dict], topic: str, output_dir: str, on_prog
     template = env.get_template("slide_template.html")
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+        browser = await p.chromium.launch(headless=True, args=["--no-sandbox"])
         context = await browser.new_context(
             viewport={"width": WIDTH, "height": HEIGHT},
             device_scale_factor=2

@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 
-# Install system deps: ffmpeg + Chromium for Playwright
+# Install system deps: ffmpeg + Chromium for Playwright + fonts
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     curl \
@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     fonts-noto-color-emoji \
     fonts-noto-cjk \
+    fonts-freefont-ttf \
+    fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Playwright with Chromium
