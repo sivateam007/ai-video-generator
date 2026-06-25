@@ -31,11 +31,11 @@ async def render_slides(slides: list[dict], topic: str, output_dir: str, on_prog
                 code=slide.get("code", ""),
                 slide_num=f"{i+1:02d} / {total:02d}"
             )
-            await page.set_content(html, wait_until="networkidle")
-            await page.wait_for_timeout(500)
+            await page.set_content(html, wait_until="load")
+            await page.wait_for_timeout(1000)
 
             out_path = os.path.join(output_dir, f"slide_{i+1:02d}.png")
-            await page.screenshot(path=out_path, full_page=False)
+            await page.screenshot(path=out_path, full_page=False, timeout=60000)
 
             if on_progress:
                 await on_progress(f"slide_{i+1:02d}.png")
