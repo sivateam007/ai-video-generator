@@ -19,9 +19,9 @@ async def generate_audio(slides: list[dict], output_dir: str, on_progress=None) 
 
         client = genai.Client(api_key=GEMINI_API_KEY)
 
-        # Title gap
+        # Title intro gap (longer for proper welcome)
         silent_gap = os.path.join(output_dir, "_gap.mp3")
-        _make_silence(silent_gap, 5.0)
+        _make_silence(silent_gap, 8.0)
         audio_files.append(silent_gap)
         if on_progress:
             await on_progress("audio_title_gap")
@@ -124,10 +124,10 @@ def _find_ffmpeg() -> str:
 def _generate_silent(slides: list[dict], output_dir: str) -> list[str]:
     paths = []
     gap = os.path.join(output_dir, "_gap.mp3")
-    _make_silence(gap, 5.0)
+    _make_silence(gap, 8.0)
     paths.append(gap)
     for i in range(len(slides)):
         p = os.path.join(output_dir, f"slide_{i+1:02d}.mp3")
-        _make_silence(p, 5.0)
+        _make_silence(p, 10.0)
         paths.append(p)
     return paths

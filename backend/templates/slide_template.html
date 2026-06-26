@@ -21,16 +21,26 @@ body {
 }
 .top-bar {
     background: linear-gradient(90deg, #0c1f33, #125683);
-    padding: 14px 24px;
+    padding: 10px 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-shrink: 0;
 }
 .top-bar .brand {
-    color: #7f89d4;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.top-bar .brand img {
+    height: 32px;
+    width: auto;
+    border-radius: 4px;
+}
+.top-bar .brand .brand-text {
+    color: #ffd700;
     font-weight: 700;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     letter-spacing: 1px;
 }
 .top-bar .topic {
@@ -144,7 +154,10 @@ body {
 </head><body>
 <div class="slide">
 <div class="top-bar">
-<span class="brand">🎬 SK AI Video Generator</span>
+<span class="brand">
+    <img src="{{ logo_data }}" alt="JT Logo">
+    <span class="brand-text">JT Group of Institution</span>
+</span>
 <span class="topic">{{ topic }}</span>
 </div>
 <div class="body-content">
@@ -161,7 +174,7 @@ body {
 </div>
 <div class="bottom-bar">
 <span class="slide-num">{{ slide_num }}</span>
-<span class="tagline">SK AI Video Generator</span>
+<span class="tagline">JT Group of Institution</span>
 </div>
 </div>
 </body></html>

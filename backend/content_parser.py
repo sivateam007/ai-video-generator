@@ -94,6 +94,10 @@ def parse_section_content(parent: Tag, section: SlideSection):
                 section.code_blocks.append(code)
 
         elif tag == 'div' and any(c in (el.get('class', []) or []) for c in ('code-example', 'code-block')):
+            # Extract the heading/title of the code example
+            h3 = el.find('h3')
+            if h3:
+                section.paragraphs.append(f"குறியீடு: {clean_text(h3.get_text())}")
             code = extract_code_from_element(el)
             if code:
                 section.code_blocks.append(code)
@@ -101,10 +105,17 @@ def parse_section_content(parent: Tag, section: SlideSection):
         elif tag == 'div' and any(c in (el.get('class', []) or []) for c in ('tip-box', 'warning-box', 'exercise-box')):
             box_cls = [c for c in (el.get('class', []) or []) if c in ('tip-box', 'warning-box', 'exercise-box')][0]
             prefix = {'tip-box': 'TIP:', 'warning-box': 'WARNING:', 'exercise-box': 'EXERCISE:'}[box_cls]
-            text = clean_text(el.get_text())
+            # Extract heading first
+            h4 = el.find('h4')
+            heading_text = clean_text(h4.get_text()) if h4 else ""
+            # Extract all paragraphs inside
+            inner_ps = [clean_text(p.get_text()) for p in el.find_all('p') if clean_text(p.get_text())]
+            inner_lis = [clean_text(li.get_text()) for li in el.find_all('li') if clean_text(li.get_text())]
+            all_text = heading_text + " " + " ".join(inner_ps) + " " + " ".join(inner_lis)
+            text = clean_text(all_text)
             if text:
                 section.paragraphs.append(f"{prefix} {text}")
-            # Also extract list items inside
+            # Also extract list items and code inside
             parse_section_content(el, section)
 
         elif tag == 'img':
@@ -134,7 +145,7 @@ def parse_html(html_content: str) -> ParsedContent:
 
     parsed = ParsedContent(title=title)
 
-    # Hero section
+    # Hero section — include as first section
     hero = soup.select_one('.hero-content')
     if hero:
         h2 = hero.find('h2')
@@ -143,6 +154,13 @@ def parse_html(html_content: str) -> ParsedContent:
             parsed.hero_title = clean_text(h2.get_text())
         if p:
             parsed.hero_subtitle = clean_text(p.get_text())
+        # Add hero as first section
+        hero_heading = clean_text(h2.get_text()) if h2 else "அறிமுகம்"
+        hero_sec = SlideSection(heading=hero_heading)
+        if p:
+            hero_sec.paragraphs.append(clean_text(p.get_text()))
+        if hero_sec.paragraphs:
+            parsed.sections.insert(0, hero_sec)
 
     # Find main content area
     main = soup.select_one('main.container') or soup.select_one('main') or soup.select_one('.container') or soup.find('body')

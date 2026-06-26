@@ -31,8 +31,8 @@ def assemble_video(
     os.makedirs(str(seg_dir), exist_ok=True)
     seg_files = []
 
-    # First audio is the title gap; remaining map 1:1 to slides
-    audio_idx = 0
+    # Audio files: [gap, slide_1, slide_2, ...]; skip gap, map 1:1
+    audio_idx = 1
     for slide_idx, slide_path in enumerate(slide_files, 1):
         audio_path = audio_files[audio_idx] if audio_idx < len(audio_files) else None
         audio_idx += 1
@@ -49,6 +49,21 @@ def assemble_video(
         dur = get_duration(audio_path, ffprobe)
         if dur < 0.5:
             dur = 3.0
+
+        # Ensure minimum 30 seconds per slide
+        min_dur = 30.0
+        if dur < min_dur:
+            pad_needed = min_dur - dur
+            padded_audio = str(seg_dir / f"_padded_{slide_idx:02d}.mp3")
+            subprocess.run([
+                ffmpeg, "-y", "-i", audio_path,
+                "-af", f"apad=pad_dur={pad_needed:.1f}",
+                "-c:a", "aac", "-b:a", "128k",
+                "-t", str(min_dur),
+                padded_audio
+            ], capture_output=True, timeout=60)
+            audio_path = padded_audio
+            dur = min_dur
 
         seg = str(seg_dir / f"seg_{slide_idx:02d}.mp4")
         subprocess.run([

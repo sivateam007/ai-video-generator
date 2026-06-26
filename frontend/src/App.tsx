@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import './App.css'
 
 type Step = 'idle' | 'parsing' | 'enriching' | 'rendering' | 'audio' | 'assembling' | 'completed' | 'error'
@@ -14,6 +14,21 @@ const STEP_LABELS: Record<string, string> = {
 
 const STEP_ORDER = ['parsing', 'enriching', 'rendering', 'audio', 'assembling']
 
+const STEP_ESTIMATES: Record<string, number> = {
+  parsing: 3,
+  enriching: 15,
+  rendering: 30,
+  audio: 40,
+  assembling: 20,
+}
+
+function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  if (m > 0) return `${m}m ${s}s`
+  return `${s}s`
+}
+
 function App() {
   const [file, setFile] = useState<File | null>(null)
   const [dragOver, setDragOver] = useState(false)
@@ -23,7 +38,29 @@ function App() {
   const [message, setMessage] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
   const [currentStepIdx, setCurrentStepIdx] = useState(0)
+  const [elapsed, setElapsed] = useState(0)
+  const [itemCount, setItemCount] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const startTimeRef = useRef<number>(0)
+  const timerRef = useRef<number>(0)
+
+  useEffect(() => {
+    if (step === 'parsing' || step === 'enriching' || step === 'rendering' || step === 'audio' || step === 'assembling') {
+      if (startTimeRef.current === 0) startTimeRef.current = Date.now()
+      timerRef.current = window.setInterval(() => {
+        setElapsed(Math.floor((Date.now() - startTimeRef.current) / 1000))
+      }, 1000)
+    } else {
+      clearInterval(timerRef.current)
+      startTimeRef.current = 0
+    }
+    return () => clearInterval(timerRef.current)
+  }, [step])
+
+  const estimatedTotal = STEP_ORDER.reduce((sum, s) => sum + STEP_ESTIMATES[s], 0)
+  const remainingEstimate = Math.max(0, Math.round(
+    estimatedTotal * (1 - progress / 100) * (elapsed > 10 ? 0.8 : 1)
+  ))
 
   const reset = useCallback(() => {
     setFile(null)
@@ -33,6 +70,10 @@ function App() {
     setMessage('')
     setErrorMsg('')
     setCurrentStepIdx(0)
+    setElapsed(0)
+    setItemCount('')
+    clearInterval(timerRef.current)
+    startTimeRef.current = 0
   }, [])
 
   const handleFile = useCallback((f: File) => {
@@ -63,6 +104,8 @@ function App() {
     setStep('parsing')
     setProgress(5)
     setCurrentStepIdx(0)
+    setElapsed(0)
+    setItemCount('')
 
     const form = new FormData()
     form.append('file', file)
@@ -78,9 +121,9 @@ function App() {
       evtSource.addEventListener('status', (e: Event) => {
         const data = JSON.parse((e as MessageEvent).data)
         setMessage(data.message || '')
-        if (data.step === 'parsed') { setProgress(10) }
+        if (data.step === 'parsed') { setProgress(10); setItemCount(`${data.sections || 0} sections found`) }
         if (data.step === 'enriching') { setStep('enriching'); setCurrentStepIdx(1); setProgress(15) }
-        if (data.step === 'enriched') { setProgress(20) }
+        if (data.step === 'enriched') { setProgress(20); setItemCount(`${data.count || 0} slides created`) }
         if (data.step === 'rendering') { setStep('rendering'); setCurrentStepIdx(2); setProgress(25) }
         if (data.step === 'audio') { setStep('audio'); setCurrentStepIdx(3); setProgress(55) }
         if (data.step === 'assembling') { setStep('assembling'); setCurrentStepIdx(4); setProgress(80) }
@@ -89,14 +132,19 @@ function App() {
       evtSource.addEventListener('progress', (e: Event) => {
         const data = JSON.parse((e as MessageEvent).data)
         if (data.item === 'slide') {
-          const fraction = parseInt(data.name.replace('slide_', '')) / data.count
-          setProgress(25 + fraction * 30)
+          const num = parseInt(data.name.replace('slide_', ''))
+          const total = data.count
+          setItemCount(`Slide ${num} of ${total}`)
+          setProgress(25 + (num / total) * 30)
         }
         if (data.item === 'audio') {
-          const fraction = parseInt(data.name.replace('audio_slide_', '')) / data.count
-          setProgress(55 + fraction * 25)
+          const num = parseInt(data.name.replace('audio_slide_', ''))
+          const total = data.count
+          setItemCount(`Audio ${num} of ${total}`)
+          setProgress(55 + (num / total) * 25)
         }
         if (data.item === 'segment') {
+          setItemCount(`Assembling video segments...`)
           setProgress(85)
         }
       })
@@ -105,6 +153,7 @@ function App() {
         setStep('completed')
         setProgress(100)
         setCurrentStepIdx(5)
+        setItemCount('Done!')
         evtSource.close()
       })
 
@@ -137,13 +186,15 @@ function App() {
     }
   }, [file])
 
+  const isProcessing = step === 'parsing' || step === 'enriching' || step === 'rendering' || step === 'audio' || step === 'assembling'
+
   return (
     <div className="app">
       <header>
         <div className="header-container">
           <div className="logo">
             <div className="logo-icon">🎬</div>
-            <h1>SK <span>AI Video Generator</span></h1>
+            <h1>Siva <span>Video Generator</span></h1>
           </div>
         </div>
       </header>
@@ -201,16 +252,36 @@ function App() {
           </div>
         ) : null}
 
-        {step !== 'idle' && step !== 'error' && (
+        {isProcessing || step === 'completed' ? (
           <div className="content-section" style={{ padding: '2.5rem' }}>
-            <h2 style={{ border: 'none', display: 'block', textAlign: 'center', marginBottom: '1.5rem' }}>
+            <h2 style={{ border: 'none', display: 'block', textAlign: 'center', marginBottom: '0.5rem' }}>
               {step === 'completed' ? '✅ ' : '⏳ '}
               {STEP_LABELS[step] || message}
             </h2>
+
+            {/* Elapsed & Estimated time */}
+            {isProcessing && (
+              <div className="time-info">
+                <span className="time-elapsed">⏱️ {formatTime(elapsed)} elapsed</span>
+                {progress > 5 && progress < 95 && (
+                  <span className="time-remaining">⏳ ~{formatTime(remainingEstimate)} remaining</span>
+                )}
+              </div>
+            )}
+
+            {/* Progress bar */}
             <div className="progress-bar-track">
               <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
             </div>
-            <div className="steps" style={{ marginTop: '2rem' }}>
+
+            {/* Percentage & item count */}
+            <div className="progress-stats">
+              <span className="progress-pct">{Math.round(progress)}% complete</span>
+              {itemCount && <span className="progress-item">{itemCount}</span>}
+            </div>
+
+            {/* Step list */}
+            <div className="steps" style={{ marginTop: '1.5rem' }}>
               {STEP_ORDER.map((s, i) => {
                 let cls = 'step'
                 if (i < currentStepIdx) cls += ' done'
@@ -218,17 +289,28 @@ function App() {
                 return (
                   <div key={s} className={cls}>
                     <span className="step-dot">{i < currentStepIdx ? '✓' : i === currentStepIdx ? '●' : '○'}</span>
-                    <span>{STEP_LABELS[s]}</span>
+                    <span className="step-label">{STEP_LABELS[s]}</span>
+                    {i === currentStepIdx && isProcessing && (
+                      <span className="step-estimate">~{formatTime(STEP_ESTIMATES[s])}</span>
+                    )}
+                    {i < currentStepIdx && (
+                      <span className="step-done-mark">✓</span>
+                    )}
                   </div>
                 )
               })}
               <div className={`step ${step === 'completed' ? 'done active' : ''}`}>
                 <span className="step-dot">{step === 'completed' ? '✓' : '○'}</span>
-                <span>Video ready for download!</span>
+                <span className="step-label">Video ready for download!</span>
               </div>
             </div>
+
+            {/* Total time on completion */}
+            {step === 'completed' && (
+              <p className="total-time">✅ Completed in {formatTime(elapsed)}</p>
+            )}
           </div>
-        )}
+        ) : null}
 
         {step === 'completed' && (
           <div className="content-section" style={{ textAlign: 'center', padding: '3rem' }}>
@@ -236,7 +318,7 @@ function App() {
               🎉 Your Video is Ready!
             </h2>
             <p style={{ fontSize: '1.2rem', color: '#555', margin: '1rem 0 2rem' }}>
-              Your educational video has been generated successfully. Click below to download.
+              Your educational video has been generated successfully.
             </p>
             <div className="platform-buttons" style={{ justifyContent: 'center', marginBottom: '1.5rem' }}>
               <a className="platform-btn active download-btn" href={`/api/download/${jobId}`} download style={{ fontSize: '1.1rem', padding: '14px 40px' }}>
@@ -251,7 +333,7 @@ function App() {
       <footer>
         <div className="footer-content">
           <div className="footer-column">
-            <h3>SK AI Video Generator</h3>
+            <h3>Siva Video Generator</h3>
             <p style={{ color: '#ddd', lineHeight: '1.8' }}>
               Upload HTML tutorials and get polished educational videos with AI-generated slides, narrations, and professional formatting.
             </p>
@@ -276,7 +358,7 @@ function App() {
           </div>
         </div>
         <div className="copyright">
-          &copy; 2026 SK AI Video Generator &bull; Turn HTML into Educational Videos
+          &copy; 2026 Siva Video Generator &bull; Turn HTML into Educational Videos
         </div>
       </footer>
     </div>
